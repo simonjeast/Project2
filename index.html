@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BOW Tracker | Gym Routine Scheduler</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="background-glow"></div>
+    <main class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">BOW Tracker</p>
+          <h1>Train With Intention</h1>
+          <p id="todayLabel" class="subhead"></p>
+        </div>
+        <div class="hero-actions">
+          <button id="randomizeBtn" class="btn btn-accent">Randomize Today</button>
+          <button id="clearCompletedBtn" class="btn btn-muted">Clear Completed</button>
+        </div>
+      </header>
+
+      <section class="control-panel">
+        <div class="view-toggle" role="tablist" aria-label="Routine view">
+          <button id="todayViewBtn" class="pill active" role="tab" aria-selected="true">Today's Plan</button>
+          <button id="weekViewBtn" class="pill" role="tab" aria-selected="false">Weekly Plan</button>
+        </div>
+
+        <form id="addWorkoutForm" class="add-form" autocomplete="off">
+          <div class="form-grid">
+            <input id="workoutName" type="text" placeholder="Workout name" required maxlength="80" />
+            <input id="workoutSets" type="number" min="1" max="20" value="3" required />
+            <select id="workoutDay" aria-label="Day for workout">
+              <option value="today">Today</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+              <option value="Sunday">Sunday</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Add Workout</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="stats" aria-live="polite">
+        <article>
+          <h2>Completed</h2>
+          <p id="completedCount">0</p>
+        </article>
+        <article>
+          <h2>Remaining</h2>
+          <p id="remainingCount">0</p>
+        </article>
+        <article>
+          <h2>Progress</h2>
+          <p id="progressPercent">0%</p>
+        </article>
+      </section>
+
+      <section>
+        <ul id="workoutList" class="workout-list" aria-label="Workout list"></ul>
+        <p id="emptyState" class="empty-state hidden">
+          No workouts in this view yet. Add one above and start moving.
+        </p>
+      </section>
+    </main>
+
+    <template id="workoutItemTemplate">
+      <li class="workout-item" draggable="true">
+        <div class="drag-handle" aria-hidden="true">::</div>
+        <label class="workout-main">
+          <input class="complete-checkbox" type="checkbox" />
+          <span class="text-wrap">
+            <span class="workout-name"></span>
+            <span class="workout-meta"></span>
+          </span>
+        </label>
+        <button class="delete-btn" aria-label="Delete workout">Delete</button>
+      </li>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
