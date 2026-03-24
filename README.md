@@ -1,2 +1,2 @@
-# BOWTracker
+# GymTracker
 
