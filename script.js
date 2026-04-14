@@ -1,38 +1,107 @@
 const STORAGE_KEY = "bow-tracker-workouts-v1";
 const VIEW_TODAY = "today";
 const VIEW_WEEK = "week";
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+const PRESET_ROUTINES = [
+  {
+    id: "beginner-strength",
+    name: "Beginner Strength",
+    description: "A balanced three-day plan for building consistency and learning the basics.",
+    workouts: [
+      { name: "Goblet Squat", sets: 3, day: "Monday" },
+      { name: "Bench Press", sets: 4, day: "Monday" },
+      { name: "Seated Row", sets: 3, day: "Monday" },
+      { name: "Romanian Deadlift", sets: 3, day: "Wednesday" },
+      { name: "Dumbbell Shoulder Press", sets: 3, day: "Wednesday" },
+      { name: "Lat Pulldown", sets: 3, day: "Wednesday" },
+      { name: "Leg Press", sets: 4, day: "Friday" },
+      { name: "Incline Dumbbell Press", sets: 3, day: "Friday" },
+      { name: "Plank Holds", sets: 3, day: "Friday" }
+    ]
+  },
+  {
+    id: "push-pull-legs",
+    name: "Push Pull Legs",
+    description: "A classic split that spreads volume across the week and is easy to expand.",
+    workouts: [
+      { name: "Barbell Bench Press", sets: 4, day: "Monday" },
+      { name: "Incline Dumbbell Press", sets: 3, day: "Monday" },
+      { name: "Cable Lateral Raise", sets: 3, day: "Monday" },
+      { name: "Barbell Row", sets: 4, day: "Wednesday" },
+      { name: "Pull Ups", sets: 3, day: "Wednesday" },
+      { name: "Hammer Curl", sets: 3, day: "Wednesday" },
+      { name: "Back Squat", sets: 4, day: "Friday" },
+      { name: "Romanian Deadlift", sets: 3, day: "Friday" },
+      { name: "Walking Lunges", sets: 3, day: "Friday" }
+    ]
+  },
+  {
+    id: "upper-lower",
+    name: "Upper Lower Split",
+    description: "Four focused sessions with clear upper and lower body emphasis.",
+    workouts: [
+      { name: "Bench Press", sets: 4, day: "Monday" },
+      { name: "Chest Supported Row", sets: 4, day: "Monday" },
+      { name: "Cable Fly", sets: 3, day: "Monday" },
+      { name: "Back Squat", sets: 4, day: "Tuesday" },
+      { name: "Leg Curl", sets: 3, day: "Tuesday" },
+      { name: "Standing Calf Raise", sets: 4, day: "Tuesday" },
+      { name: "Overhead Press", sets: 4, day: "Thursday" },
+      { name: "Lat Pulldown", sets: 3, day: "Thursday" },
+      { name: "Triceps Pressdown", sets: 3, day: "Thursday" },
+      { name: "Deadlift", sets: 4, day: "Friday" },
+      { name: "Bulgarian Split Squat", sets: 3, day: "Friday" },
+      { name: "Hanging Knee Raise", sets: 3, day: "Friday" }
+    ]
+  }
+];
 
 const seedWorkouts = [
-  { id: crypto.randomUUID(), name: "Bench Press", sets: 4, day: "Monday", completed: false },
-  { id: crypto.randomUUID(), name: "Deadlift", sets: 5, day: "Tuesday", completed: false },
-  { id: crypto.randomUUID(), name: "Pull Ups", sets: 3, day: "Wednesday", completed: false },
-  { id: crypto.randomUUID(), name: "Shoulder Press", sets: 4, day: "Thursday", completed: false },
-  { id: crypto.randomUUID(), name: "Leg Press", sets: 4, day: "Friday", completed: false },
-  { id: crypto.randomUUID(), name: "Plank Holds", sets: 3, day: "Saturday", completed: false }
+  createWorkout("Bench Press", 4, "Monday"),
+  createWorkout("Deadlift", 5, "Tuesday"),
+  createWorkout("Pull Ups", 3, "Wednesday"),
+  createWorkout("Shoulder Press", 4, "Thursday"),
+  createWorkout("Leg Press", 4, "Friday"),
+  createWorkout("Plank Holds", 3, "Saturday")
 ];
 
 const state = {
   workouts: loadWorkouts(),
   view: VIEW_TODAY,
-  draggingId: null
+  draggingId: null,
+  editingId: null
 };
 
 const nodes = {
-  workoutList: document.querySelector("#workoutList"),
-  workoutItemTemplate: document.querySelector("#workoutItemTemplate"),
   addWorkoutForm: document.querySelector("#addWorkoutForm"),
-  workoutName: document.querySelector("#workoutName"),
-  workoutSets: document.querySelector("#workoutSets"),
-  workoutDay: document.querySelector("#workoutDay"),
-  randomizeBtn: document.querySelector("#randomizeBtn"),
-  clearCompletedBtn: document.querySelector("#clearCompletedBtn"),
-  todayViewBtn: document.querySelector("#todayViewBtn"),
-  weekViewBtn: document.querySelector("#weekViewBtn"),
-  emptyState: document.querySelector("#emptyState"),
+  cancelEditBtn: document.querySelector("#cancelEditBtn"),
+  clearProgressBtn: document.querySelector("#resetProgressBtn"),
   completedCount: document.querySelector("#completedCount"),
-  remainingCount: document.querySelector("#remainingCount"),
+  emptyState: document.querySelector("#emptyState"),
+  focusMeta: document.querySelector("#focusMeta"),
+  focusTitle: document.querySelector("#focusTitle"),
+  formModeLabel: document.querySelector("#formModeLabel"),
+  formTitle: document.querySelector("#formTitle"),
+  listTitle: document.querySelector("#listTitle"),
+  presetFeedback: document.querySelector("#presetFeedback"),
+  presetLibrary: document.querySelector("#presetLibrary"),
+  progressBar: document.querySelector("#progressBar"),
+  progressDetail: document.querySelector("#progressDetail"),
   progressPercent: document.querySelector("#progressPercent"),
-  todayLabel: document.querySelector("#todayLabel")
+  randomizeBtn: document.querySelector("#randomizeBtn"),
+  remainingCount: document.querySelector("#remainingCount"),
+  submitWorkoutBtn: document.querySelector("#submitWorkoutBtn"),
+  todayLabel: document.querySelector("#todayLabel"),
+  todayOption: document.querySelector("#todayOption"),
+  todayViewBtn: document.querySelector("#todayViewBtn"),
+  viewCaption: document.querySelector("#viewCaption"),
+  weekViewBtn: document.querySelector("#weekViewBtn"),
+  workoutDay: document.querySelector("#workoutDay"),
+  workoutItemTemplate: document.querySelector("#workoutItemTemplate"),
+  workoutList: document.querySelector("#workoutList"),
+  workoutName: document.querySelector("#workoutName"),
+  workoutSets: document.querySelector("#workoutSets")
 };
 
 init();
@@ -40,32 +109,74 @@ init();
 function init() {
   updateTodayLabel();
   registerEvents();
+  renderPresetLibrary();
   render();
+}
+
+function createWorkout(name, sets, day) {
+  return {
+    id: createId(),
+    name,
+    sets,
+    day,
+    lastCompletedOn: null
+  };
+}
+
+function createId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `workout-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function loadWorkouts() {
   const raw = localStorage.getItem(STORAGE_KEY);
 
   if (!raw) {
-    return seedWorkouts;
+    return [...seedWorkouts];
   }
 
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
-      return seedWorkouts;
+      return [...seedWorkouts];
     }
 
-    return parsed.map((item) => ({
-      id: String(item.id),
-      name: String(item.name),
-      sets: Number(item.sets) || 1,
-      day: String(item.day),
-      completed: Boolean(item.completed)
-    }));
+    const workouts = parsed
+      .map((item) => normalizeWorkout(item))
+      .filter((item) => item !== null);
+
+    return workouts.length ? workouts : [...seedWorkouts];
   } catch {
-    return seedWorkouts;
+    return [...seedWorkouts];
   }
+}
+
+function normalizeWorkout(item) {
+  const name = String(item?.name ?? "").trim();
+  const day = DAYS.includes(String(item?.day)) ? String(item.day) : getTodayName();
+
+  if (!name) {
+    return null;
+  }
+
+  let lastCompletedOn = null;
+
+  if (isIsoDate(item?.lastCompletedOn)) {
+    lastCompletedOn = item.lastCompletedOn;
+  } else if (item?.completed === true) {
+    lastCompletedOn = getScheduledDateIso(day);
+  }
+
+  return {
+    id: String(item?.id || createId()),
+    name,
+    sets: clampSets(Number(item?.sets)),
+    day,
+    lastCompletedOn
+  };
 }
 
 function saveWorkouts() {
@@ -73,101 +184,427 @@ function saveWorkouts() {
 }
 
 function registerEvents() {
-  nodes.addWorkoutForm.addEventListener("submit", onAddWorkout);
+  nodes.addWorkoutForm.addEventListener("submit", onSubmitWorkout);
+  nodes.cancelEditBtn.addEventListener("click", cancelEditing);
+  nodes.clearProgressBtn.addEventListener("click", onResetProgress);
   nodes.randomizeBtn.addEventListener("click", onRandomizeToday);
-  nodes.clearCompletedBtn.addEventListener("click", onClearCompleted);
-
   nodes.todayViewBtn.addEventListener("click", () => setView(VIEW_TODAY));
   nodes.weekViewBtn.addEventListener("click", () => setView(VIEW_WEEK));
-
-  nodes.workoutList.addEventListener("dragover", onDragOver);
-  nodes.workoutList.addEventListener("drop", onDrop);
+  window.addEventListener("storage", onStorageSync);
 }
 
-function setView(nextView) {
-  state.view = nextView;
-  nodes.todayViewBtn.classList.toggle("active", nextView === VIEW_TODAY);
-  nodes.weekViewBtn.classList.toggle("active", nextView === VIEW_WEEK);
-  nodes.todayViewBtn.setAttribute("aria-selected", String(nextView === VIEW_TODAY));
-  nodes.weekViewBtn.setAttribute("aria-selected", String(nextView === VIEW_WEEK));
-  render();
-}
-
-function onAddWorkout(event) {
-  event.preventDefault();
-
-  const name = nodes.workoutName.value.trim();
-  const sets = Number(nodes.workoutSets.value);
-  const selectedDay = nodes.workoutDay.value;
-  const day = selectedDay === VIEW_TODAY ? getTodayName() : selectedDay;
-
-  if (!name || !Number.isFinite(sets) || sets < 1) {
+function onStorageSync(event) {
+  if (event.key !== STORAGE_KEY) {
     return;
   }
 
-  state.workouts.push({
-    id: crypto.randomUUID(),
-    name,
-    sets,
-    day,
-    completed: false
-  });
+  state.workouts = loadWorkouts();
+  cancelEditing({ focusForm: false });
+  render();
+}
 
-  nodes.addWorkoutForm.reset();
-  nodes.workoutSets.value = "3";
-  nodes.workoutDay.value = VIEW_TODAY;
+function setView(nextView) {
+  if (state.view === nextView) {
+    return;
+  }
+
+  state.view = nextView;
+  render();
+}
+
+function onSubmitWorkout(event) {
+  event.preventDefault();
+
+  const name = nodes.workoutName.value.trim();
+  const sets = clampSets(Number(nodes.workoutSets.value));
+  const chosenDay = nodes.workoutDay.value === VIEW_TODAY ? getTodayName() : nodes.workoutDay.value;
+
+  if (!name || !DAYS.includes(chosenDay)) {
+    return;
+  }
+
+  if (state.editingId) {
+    const current = state.workouts.find((workout) => workout.id === state.editingId);
+
+    if (!current) {
+      cancelEditing({ focusForm: false });
+      return;
+    }
+
+    current.name = name;
+    current.sets = sets;
+
+    if (current.day !== chosenDay) {
+      current.day = chosenDay;
+      current.lastCompletedOn = null;
+    }
+  } else {
+    state.workouts.push({
+      id: createId(),
+      name,
+      sets,
+      day: chosenDay,
+      lastCompletedOn: null
+    });
+  }
 
   saveWorkouts();
+  cancelEditing({ focusForm: false });
   render();
 }
 
 function onRandomizeToday() {
   const todayName = getTodayName();
-  const todayIndexes = [];
+  const todayWorkouts = state.workouts.filter((workout) => workout.day === todayName);
 
-  state.workouts.forEach((workout, index) => {
-    if (workout.day === todayName) {
-      todayIndexes.push(index);
-    }
-  });
-
-  if (todayIndexes.length < 2) {
+  if (todayWorkouts.length < 2) {
     return;
   }
 
-  const todayPool = todayIndexes.map((index) => state.workouts[index]);
-  shuffleArray(todayPool);
+  shuffleArray(todayWorkouts);
 
-  todayIndexes.forEach((index, i) => {
-    state.workouts[index] = todayPool[i];
+  const reordered = [];
+  let todayIndex = 0;
+
+  state.workouts.forEach((workout) => {
+    if (workout.day === todayName) {
+      reordered.push(todayWorkouts[todayIndex]);
+      todayIndex += 1;
+      return;
+    }
+
+    reordered.push(workout);
   });
 
+  state.workouts = reordered;
   saveWorkouts();
-  render();
+  renderList();
+  renderSummary();
 }
 
-function onClearCompleted() {
-  state.workouts = state.workouts.filter((workout) => !workout.completed);
+function onResetProgress() {
+  const visible = getVisibleWorkouts();
+
+  visible.forEach((workout) => {
+    if (isWorkoutCompleted(workout)) {
+      workout.lastCompletedOn = null;
+    }
+  });
+
   saveWorkouts();
   render();
 }
 
 function onToggleCompleted(id) {
-  const item = state.workouts.find((workout) => workout.id === id);
-  if (!item) {
+  const workout = state.workouts.find((item) => item.id === id);
+
+  if (!workout) {
     return;
   }
 
-  item.completed = !item.completed;
+  workout.lastCompletedOn = isWorkoutCompleted(workout) ? null : getScheduledDateIso(workout.day);
   saveWorkouts();
+  render();
+}
+
+function onEditWorkout(id) {
+  const workout = state.workouts.find((item) => item.id === id);
+
+  if (!workout) {
+    return;
+  }
+
+  state.editingId = id;
+  nodes.workoutName.value = workout.name;
+  nodes.workoutSets.value = String(workout.sets);
+  nodes.workoutDay.value = workout.day;
+  renderFormState();
+  nodes.workoutName.focus();
+}
+
+function onDeleteWorkout(id) {
+  const workout = state.workouts.find((item) => item.id === id);
+
+  if (!workout) {
+    return;
+  }
+
+  const confirmed = window.confirm(`Delete "${workout.name}" from your routine?`);
+  if (!confirmed) {
+    return;
+  }
+
+  state.workouts = state.workouts.filter((item) => item.id !== id);
+
+  if (state.editingId === id) {
+    cancelEditing({ focusForm: false });
+  }
+
+  saveWorkouts();
+  render();
+}
+
+function onUsePreset(presetId) {
+  const preset = PRESET_ROUTINES.find((item) => item.id === presetId);
+
+  if (!preset) {
+    return;
+  }
+
+  const imported = preset.workouts.map((workout) => ({
+    id: createId(),
+    name: workout.name,
+    sets: clampSets(workout.sets),
+    day: workout.day,
+    lastCompletedOn: null
+  }));
+
+  state.workouts.push(...imported);
+  saveWorkouts();
+  showPresetFeedback(`Added ${preset.name} with ${imported.length} workouts.`);
+  render();
+}
+
+function showPresetFeedback(message) {
+  nodes.presetFeedback.textContent = message;
+  nodes.presetFeedback.classList.remove("hidden");
+}
+
+function renderPresetLibrary() {
+  nodes.presetLibrary.innerHTML = "";
+
+  PRESET_ROUTINES.forEach((preset) => {
+    const card = document.createElement("article");
+    const header = document.createElement("div");
+    const kicker = document.createElement("p");
+    const title = document.createElement("h3");
+    const description = document.createElement("p");
+    const meta = document.createElement("p");
+    const list = document.createElement("ul");
+    const button = document.createElement("button");
+
+    card.className = "preset-card";
+    header.className = "preset-card-header";
+    kicker.className = "card-kicker";
+    title.className = "preset-card-title";
+    description.className = "preset-card-copy";
+    meta.className = "preset-meta";
+    list.className = "preset-list";
+    button.className = "btn btn-primary preset-action";
+    button.type = "button";
+
+    kicker.textContent = "Starter Routine";
+    title.textContent = preset.name;
+    description.textContent = preset.description;
+    meta.textContent = `${preset.workouts.length} workouts across ${countPresetDays(preset)} days`;
+
+    getPresetPreviewItems(preset).forEach((workout) => {
+      const item = document.createElement("li");
+      item.textContent = `${workout.day}: ${workout.name} (${workout.sets} sets)`;
+      list.appendChild(item);
+    });
+
+    button.textContent = "Add to routine";
+    button.addEventListener("click", () => onUsePreset(preset.id));
+
+    header.append(kicker, title, description);
+    card.append(header, meta, list, button);
+    nodes.presetLibrary.appendChild(card);
+  });
+}
+
+function countPresetDays(preset) {
+  return new Set(preset.workouts.map((workout) => workout.day)).size;
+}
+
+function getPresetPreviewItems(preset) {
+  return preset.workouts.slice(0, 4);
+}
+
+function cancelEditing(options = {}) {
+  const { focusForm = true } = options;
+
+  state.editingId = null;
+  nodes.addWorkoutForm.reset();
+  nodes.workoutSets.value = "3";
+  nodes.workoutDay.value = VIEW_TODAY;
+  renderFormState();
+
+  if (focusForm) {
+    nodes.workoutName.focus();
+  }
+}
+
+function render() {
+  updateTodayLabel();
+  renderViewState();
+  renderFormState();
+  renderSummary();
   renderStats();
   renderList();
 }
 
-function onDeleteWorkout(id) {
-  state.workouts = state.workouts.filter((workout) => workout.id !== id);
-  saveWorkouts();
-  render();
+function renderViewState() {
+  const todayName = getTodayName();
+
+  nodes.todayViewBtn.classList.toggle("active", state.view === VIEW_TODAY);
+  nodes.weekViewBtn.classList.toggle("active", state.view === VIEW_WEEK);
+  nodes.todayViewBtn.setAttribute("aria-selected", String(state.view === VIEW_TODAY));
+  nodes.weekViewBtn.setAttribute("aria-selected", String(state.view === VIEW_WEEK));
+
+  nodes.viewCaption.textContent =
+    state.view === VIEW_TODAY
+      ? `Showing ${todayName}'s plan.`
+      : `Showing the full week of ${getWeekRangeLabel()}.`;
+
+  nodes.listTitle.textContent =
+    state.view === VIEW_TODAY ? `${todayName}'s workouts` : "This week's workout split";
+}
+
+function renderFormState() {
+  const isEditing = Boolean(state.editingId);
+
+  nodes.formModeLabel.textContent = isEditing ? "Edit Workout" : "Build Routine";
+  nodes.formTitle.textContent = isEditing ? "Update your plan" : "Add a workout";
+  nodes.submitWorkoutBtn.textContent = isEditing ? "Save changes" : "Add workout";
+  nodes.cancelEditBtn.classList.toggle("hidden", !isEditing);
+}
+
+function renderSummary() {
+  const todayName = getTodayName();
+  const todayWorkouts = state.workouts.filter((workout) => workout.day === todayName);
+  const completedToday = todayWorkouts.filter((workout) => isWorkoutCompleted(workout)).length;
+  const remainingToday = todayWorkouts.length - completedToday;
+  const nextWorkout = todayWorkouts.find((workout) => !isWorkoutCompleted(workout));
+
+  if (!todayWorkouts.length) {
+    nodes.focusTitle.textContent = "Rest day or add a plan";
+    nodes.focusMeta.textContent =
+      "Nothing is scheduled for today yet. Add a workout above or import a preset routine.";
+  } else if (!remainingToday) {
+    nodes.focusTitle.textContent = "Today's work is done";
+    nodes.focusMeta.textContent = `${todayWorkouts.length} workouts checked off for ${todayName}.`;
+  } else {
+    nodes.focusTitle.textContent = nextWorkout?.name || `${remainingToday} workouts left`;
+    nodes.focusMeta.textContent = `${remainingToday} of ${todayWorkouts.length} workouts are still waiting for ${todayName}.`;
+  }
+
+  const todayCount = todayWorkouts.length;
+  const completedVisible = getVisibleWorkouts().filter((workout) => isWorkoutCompleted(workout)).length;
+
+  nodes.randomizeBtn.disabled = todayCount < 2;
+  nodes.clearProgressBtn.disabled = completedVisible === 0;
+  nodes.clearProgressBtn.textContent = state.view === VIEW_TODAY ? "Reset Today" : "Reset Week";
+}
+
+function renderStats() {
+  const visible = getVisibleWorkouts();
+  const completed = visible.filter((workout) => isWorkoutCompleted(workout)).length;
+  const remaining = visible.length - completed;
+  const progress = visible.length ? Math.round((completed / visible.length) * 100) : 0;
+
+  nodes.completedCount.textContent = String(completed);
+  nodes.remainingCount.textContent = String(remaining);
+  nodes.progressPercent.textContent = `${progress}%`;
+  nodes.progressDetail.textContent = visible.length
+    ? `${completed} of ${visible.length} workouts checked off`
+    : "No workouts in this view yet";
+  nodes.progressBar.style.width = `${progress}%`;
+}
+
+function renderList() {
+  nodes.workoutList.innerHTML = "";
+
+  const groups = getGroupsForCurrentView();
+  const visibleCount = groups.reduce((count, group) => count + group.items.length, 0);
+
+  if (!visibleCount) {
+    nodes.emptyState.classList.remove("hidden");
+    nodes.emptyState.textContent =
+      state.view === VIEW_TODAY
+        ? `No workouts scheduled for ${getTodayName()} yet. Add one above or import a pre-made routine.`
+        : "No workouts in your weekly split yet. Add a few sessions or start with a pre-made routine.";
+    return;
+  }
+
+  nodes.emptyState.classList.add("hidden");
+
+  groups.forEach((group) => {
+    const section = document.createElement("section");
+    section.className = "day-group";
+
+    const header = document.createElement("header");
+    header.className = "day-header";
+
+    const headingWrap = document.createElement("div");
+    const title = document.createElement("h3");
+    const meta = document.createElement("p");
+
+    title.className = "day-name";
+    meta.className = "day-meta";
+    title.textContent = `${group.day} - ${formatMonthDay(getDateForWeekday(group.day))}`;
+
+    const doneCount = group.items.filter((workout) => isWorkoutCompleted(workout)).length;
+    meta.textContent = `${doneCount}/${group.items.length} complete`;
+
+    headingWrap.append(title, meta);
+
+    const hint = document.createElement("p");
+    hint.className = "day-meta";
+    hint.textContent = group.day === getTodayName() ? "Today" : "Scheduled";
+
+    header.append(headingWrap, hint);
+
+    const list = document.createElement("ul");
+    list.className = "day-list";
+
+    group.items.forEach((workout) => {
+      list.appendChild(buildWorkoutRow(workout));
+    });
+
+    section.append(header, list);
+    nodes.workoutList.appendChild(section);
+  });
+}
+
+function buildWorkoutRow(workout) {
+  const fragment = nodes.workoutItemTemplate.content.cloneNode(true);
+  const row = fragment.querySelector(".workout-item");
+  const checkbox = fragment.querySelector(".complete-checkbox");
+  const name = fragment.querySelector(".workout-name");
+  const meta = fragment.querySelector(".workout-meta");
+  const editBtn = fragment.querySelector(".edit-btn");
+  const deleteBtn = fragment.querySelector(".delete-btn");
+  const completed = isWorkoutCompleted(workout);
+
+  row.dataset.id = workout.id;
+  row.dataset.day = workout.day;
+  row.classList.toggle("completed", completed);
+
+  checkbox.checked = completed;
+  checkbox.setAttribute("aria-label", `Mark ${workout.name} complete`);
+  checkbox.addEventListener("change", () => onToggleCompleted(workout.id));
+
+  name.textContent = workout.name;
+  meta.textContent = buildWorkoutMeta(workout, completed);
+
+  editBtn.addEventListener("click", () => onEditWorkout(workout.id));
+  deleteBtn.addEventListener("click", () => onDeleteWorkout(workout.id));
+
+  row.addEventListener("dragstart", (event) => onDragStart(event, workout.id));
+  row.addEventListener("dragend", onDragEnd);
+  row.addEventListener("dragover", onDragOver);
+  row.addEventListener("drop", onDrop);
+
+  return row;
+}
+
+function buildWorkoutMeta(workout, completed) {
+  const setLabel = `${workout.sets} set${workout.sets === 1 ? "" : "s"}`;
+  const dayLabel = state.view === VIEW_TODAY ? workout.day : formatMonthDay(getDateForWeekday(workout.day));
+  const status = completed ? "checked off" : "ready";
+
+  return `${setLabel} - ${dayLabel} - ${status}`;
 }
 
 function onDragStart(event, id) {
@@ -189,134 +626,160 @@ function onDragOver(event) {
 function onDrop(event) {
   event.preventDefault();
 
+  const targetRow = event.currentTarget;
   const sourceId = state.draggingId;
-  const targetRow = event.target.closest(".workout-item");
-  const targetId = targetRow?.dataset.id;
+  const targetId = targetRow.dataset.id;
 
   if (!sourceId || !targetId || sourceId === targetId) {
     return;
   }
 
-  const visible = getVisibleWorkouts();
-  const sourceVisibleIndex = visible.findIndex((x) => x.id === sourceId);
-  const targetVisibleIndex = visible.findIndex((x) => x.id === targetId);
+  const sourceWorkout = state.workouts.find((workout) => workout.id === sourceId);
+  const targetWorkout = state.workouts.find((workout) => workout.id === targetId);
 
-  if (sourceVisibleIndex < 0 || targetVisibleIndex < 0) {
+  if (!sourceWorkout || !targetWorkout || sourceWorkout.day !== targetWorkout.day) {
     return;
   }
 
-  const visibleIds = visible.map((x) => x.id);
-  visibleIds.splice(sourceVisibleIndex, 1);
-  visibleIds.splice(targetVisibleIndex, 0, sourceId);
-
-  const reorderedVisible = visibleIds
-    .map((id) => state.workouts.find((workout) => workout.id === id))
-    .filter(Boolean);
-
-  const final = [];
-  let pointer = 0;
-
-  state.workouts.forEach((workout) => {
-    const inCurrentView = isWorkoutInCurrentView(workout);
-    if (inCurrentView) {
-      final.push(reorderedVisible[pointer]);
-      pointer += 1;
-    } else {
-      final.push(workout);
-    }
-  });
-
-  state.workouts = final;
+  reorderWithinDay(sourceWorkout.day, sourceId, targetId);
+  state.draggingId = null;
   saveWorkouts();
   renderList();
 }
 
-function render() {
-  renderStats();
-  renderList();
-}
+function reorderWithinDay(day, sourceId, targetId) {
+  const dayWorkouts = state.workouts.filter((workout) => workout.day === day);
+  const sourceIndex = dayWorkouts.findIndex((workout) => workout.id === sourceId);
+  const targetIndex = dayWorkouts.findIndex((workout) => workout.id === targetId);
 
-function renderStats() {
-  const visible = getVisibleWorkouts();
-  const completed = visible.filter((item) => item.completed).length;
-  const remaining = visible.length - completed;
-  const progress = visible.length ? Math.round((completed / visible.length) * 100) : 0;
-
-  nodes.completedCount.textContent = String(completed);
-  nodes.remainingCount.textContent = String(remaining);
-  nodes.progressPercent.textContent = `${progress}%`;
-}
-
-function renderList() {
-  nodes.workoutList.innerHTML = "";
-  const visible = getVisibleWorkouts();
-
-  if (!visible.length) {
-    nodes.emptyState.classList.remove("hidden");
+  if (sourceIndex < 0 || targetIndex < 0) {
     return;
   }
 
-  nodes.emptyState.classList.add("hidden");
+  const reordered = [...dayWorkouts];
+  const [moved] = reordered.splice(sourceIndex, 1);
+  reordered.splice(targetIndex, 0, moved);
 
-  visible.forEach((workout) => {
-    const fragment = nodes.workoutItemTemplate.content.cloneNode(true);
-    const row = fragment.querySelector(".workout-item");
-    const checkbox = fragment.querySelector(".complete-checkbox");
-    const name = fragment.querySelector(".workout-name");
-    const meta = fragment.querySelector(".workout-meta");
-    const deleteBtn = fragment.querySelector(".delete-btn");
+  const next = [];
+  let pointer = 0;
 
-    row.dataset.id = workout.id;
-    row.classList.toggle("completed", workout.completed);
+  state.workouts.forEach((workout) => {
+    if (workout.day === day) {
+      next.push(reordered[pointer]);
+      pointer += 1;
+      return;
+    }
 
-    checkbox.checked = workout.completed;
-    checkbox.addEventListener("change", () => onToggleCompleted(workout.id));
-
-    name.textContent = workout.name;
-    meta.textContent = `${workout.sets} set${workout.sets > 1 ? "s" : ""} - ${workout.day}`;
-
-    deleteBtn.addEventListener("click", () => onDeleteWorkout(workout.id));
-
-    row.addEventListener("dragstart", (event) => onDragStart(event, workout.id));
-    row.addEventListener("dragend", onDragEnd);
-
-    nodes.workoutList.appendChild(fragment);
+    next.push(workout);
   });
+
+  state.workouts = next;
+}
+
+function getGroupsForCurrentView() {
+  if (state.view === VIEW_TODAY) {
+    const todayName = getTodayName();
+    return [
+      {
+        day: todayName,
+        items: state.workouts.filter((workout) => workout.day === todayName)
+      }
+    ];
+  }
+
+  return DAYS.map((day) => ({
+    day,
+    items: state.workouts.filter((workout) => workout.day === day)
+  })).filter((group) => group.items.length);
 }
 
 function getVisibleWorkouts() {
-  if (state.view === VIEW_WEEK) {
-    return [...state.workouts];
-  }
-
-  const todayName = getTodayName();
-  return state.workouts.filter((workout) => workout.day === todayName);
+  return getGroupsForCurrentView().flatMap((group) => group.items);
 }
 
-function isWorkoutInCurrentView(workout) {
-  if (state.view === VIEW_WEEK) {
-    return true;
-  }
-
-  return workout.day === getTodayName();
+function isWorkoutCompleted(workout) {
+  return workout.lastCompletedOn === getScheduledDateIso(workout.day);
 }
 
 function updateTodayLabel() {
-  const now = new Date();
-  nodes.todayLabel.textContent = now.toLocaleDateString(undefined, {
+  const today = new Date();
+  nodes.todayLabel.textContent = `${formatLongDate(today)} - Week of ${formatMonthDay(getStartOfWeek(today))}`;
+  nodes.todayOption.textContent = `Today (${getTodayName()})`;
+}
+
+function getTodayName() {
+  const dayIndex = new Date().getDay();
+  return DAYS[dayIndex === 0 ? 6 : dayIndex - 1];
+}
+
+function getScheduledDateIso(day) {
+  return formatIsoDate(getDateForWeekday(day));
+}
+
+function getDateForWeekday(day, anchorDate = new Date()) {
+  const weekStart = getStartOfWeek(anchorDate);
+  const index = DAYS.indexOf(day);
+  const date = new Date(weekStart);
+  date.setDate(weekStart.getDate() + index);
+  return date;
+}
+
+function getStartOfWeek(anchorDate = new Date()) {
+  const date = new Date(anchorDate);
+  date.setHours(0, 0, 0, 0);
+
+  const day = date.getDay();
+  const shift = day === 0 ? -6 : 1 - day;
+
+  date.setDate(date.getDate() + shift);
+  return date;
+}
+
+function getWeekRangeLabel() {
+  const start = getStartOfWeek();
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return `${formatMonthDay(start)} - ${formatMonthDay(end)}`;
+}
+
+function formatLongDate(date) {
+  return date.toLocaleDateString(undefined, {
     weekday: "long",
     month: "long",
     day: "numeric"
   });
 }
 
-function getTodayName() {
-  return new Date().toLocaleDateString(undefined, { weekday: "long" });
+function formatMonthDay(date) {
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric"
+  });
+}
+
+function formatIsoDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function isIsoDate(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function clampSets(value) {
+  if (!Number.isFinite(value)) {
+    return 3;
+  }
+
+  return Math.min(20, Math.max(1, Math.round(value)));
 }
 
 function shuffleArray(items) {
-  for (let i = items.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [items[i], items[j]] = [items[j], items[i]];
+  for (let index = items.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [items[index], items[swapIndex]] = [items[swapIndex], items[index]];
   }
 }

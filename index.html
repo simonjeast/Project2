@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="BOW Tracker is a lightweight gym routine planner for tracking daily workouts, weekly splits, and completion progress."
+    />
     <title>BOW Tracker | Gym Routine Scheduler</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,42 +18,102 @@
   </head>
   <body>
     <div class="background-glow"></div>
+
     <main class="app-shell">
       <header class="hero">
-        <div>
+        <div class="hero-copy">
           <p class="eyebrow">BOW Tracker</p>
           <h1>Train With Intention</h1>
           <p id="todayLabel" class="subhead"></p>
         </div>
+
         <div class="hero-actions">
-          <button id="randomizeBtn" class="btn btn-accent">Randomize Today</button>
-          <button id="clearCompletedBtn" class="btn btn-muted">Clear Completed</button>
+          <button id="randomizeBtn" class="btn btn-accent" type="button">Shuffle Today</button>
+          <button id="resetProgressBtn" class="btn btn-muted" type="button">Reset Today</button>
         </div>
       </header>
 
+      <section class="overview-grid" aria-label="Workout overview">
+        <article class="overview-card spotlight-card">
+          <p class="card-kicker">Current Focus</p>
+          <h2 id="focusTitle" class="card-title">Loading plan...</h2>
+          <p id="focusMeta" class="card-copy"></p>
+        </article>
+
+        <article class="overview-card planner-card">
+          <p class="card-kicker">Routine Planner</p>
+          <p class="card-copy">
+            Build a weekly split, drag workouts to reorder them within a day, and use the
+            daily view when you just want today&apos;s plan in front of you.
+          </p>
+        </article>
+      </section>
+
       <section class="control-panel">
-        <div class="view-toggle" role="tablist" aria-label="Routine view">
-          <button id="todayViewBtn" class="pill active" role="tab" aria-selected="true">Today's Plan</button>
-          <button id="weekViewBtn" class="pill" role="tab" aria-selected="false">Weekly Plan</button>
+        <div class="toolbar">
+          <div class="view-toggle" role="tablist" aria-label="Routine view">
+            <button id="todayViewBtn" class="pill active" role="tab" aria-selected="true" type="button">
+              Today
+            </button>
+            <button id="weekViewBtn" class="pill" role="tab" aria-selected="false" type="button">
+              This Week
+            </button>
+          </div>
+
+          <p id="viewCaption" class="view-caption"></p>
         </div>
 
         <form id="addWorkoutForm" class="add-form" autocomplete="off">
+          <div class="form-heading">
+            <div>
+              <p id="formModeLabel" class="card-kicker">Build Routine</p>
+              <h2 id="formTitle" class="form-title">Add a workout</h2>
+            </div>
+
+            <button id="cancelEditBtn" class="text-btn hidden" type="button">Cancel edit</button>
+          </div>
+
           <div class="form-grid">
-            <input id="workoutName" type="text" placeholder="Workout name" required maxlength="80" />
-            <input id="workoutSets" type="number" min="1" max="20" value="3" required />
-            <select id="workoutDay" aria-label="Day for workout">
-              <option value="today">Today</option>
-              <option value="Monday">Monday</option>
-              <option value="Tuesday">Tuesday</option>
-              <option value="Wednesday">Wednesday</option>
-              <option value="Thursday">Thursday</option>
-              <option value="Friday">Friday</option>
-              <option value="Saturday">Saturday</option>
-              <option value="Sunday">Sunday</option>
-            </select>
-            <button type="submit" class="btn btn-primary">Add Workout</button>
+            <label class="field">
+              <span>Workout</span>
+              <input id="workoutName" type="text" placeholder="Incline dumbbell press" required maxlength="80" />
+            </label>
+
+            <label class="field">
+              <span>Sets</span>
+              <input id="workoutSets" type="number" min="1" max="20" value="3" required />
+            </label>
+
+            <label class="field">
+              <span>Day</span>
+              <select id="workoutDay" aria-label="Day for workout">
+                <option id="todayOption" value="today">Today</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+              </select>
+            </label>
+
+            <button id="submitWorkoutBtn" type="submit" class="btn btn-primary">Add workout</button>
           </div>
         </form>
+
+        <section class="preset-panel" aria-labelledby="presetTitle">
+          <div class="section-heading">
+            <div>
+              <p class="card-kicker">Preset Library</p>
+              <h2 id="presetTitle" class="section-title">Use a pre-made routine</h2>
+            </div>
+            <p class="section-note">Import a starter split and customize it after.</p>
+          </div>
+
+          <p id="presetFeedback" class="preset-feedback hidden" aria-live="polite"></p>
+          <div id="presetLibrary" class="preset-library" aria-label="Pre-made workouts"></div>
+        </section>
       </section>
 
       <section class="stats" aria-live="polite">
@@ -57,27 +121,47 @@
           <h2>Completed</h2>
           <p id="completedCount">0</p>
         </article>
+
         <article>
           <h2>Remaining</h2>
           <p id="remainingCount">0</p>
         </article>
+
         <article>
           <h2>Progress</h2>
           <p id="progressPercent">0%</p>
         </article>
       </section>
 
-      <section>
-        <ul id="workoutList" class="workout-list" aria-label="Workout list"></ul>
-        <p id="emptyState" class="empty-state hidden">
-          No workouts in this view yet. Add one above and start moving.
-        </p>
+      <section class="progress-card" aria-label="Progress bar">
+        <div class="progress-topline">
+          <p class="card-kicker">Momentum</p>
+          <p id="progressDetail" class="progress-detail"></p>
+        </div>
+        <div class="progress-track">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+      </section>
+
+      <section class="list-panel">
+        <div class="section-heading">
+          <div>
+            <p class="card-kicker">Routine Board</p>
+            <h2 id="listTitle" class="section-title">Today&apos;s workouts</h2>
+          </div>
+          <p class="section-note">Drag to reorder workouts within a day.</p>
+        </div>
+
+        <div id="workoutList" class="workout-list" aria-label="Workout list"></div>
+
+        <p id="emptyState" class="empty-state hidden"></p>
       </section>
     </main>
 
     <template id="workoutItemTemplate">
       <li class="workout-item" draggable="true">
         <div class="drag-handle" aria-hidden="true">::</div>
+
         <label class="workout-main">
           <input class="complete-checkbox" type="checkbox" />
           <span class="text-wrap">
@@ -85,7 +169,11 @@
             <span class="workout-meta"></span>
           </span>
         </label>
-        <button class="delete-btn" aria-label="Delete workout">Delete</button>
+
+        <div class="workout-actions">
+          <button class="row-btn edit-btn" type="button">Edit</button>
+          <button class="row-btn delete-btn" type="button">Delete</button>
+        </div>
       </li>
     </template>
 
