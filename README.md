@@ -1,3 +1,5 @@
+### https://simonjeast.github.io/Project2/
+
 # BOW Tracker
 
 BOW Tracker is a small front-end gym routine planner built around the idea in `PROPOSAL.md`: show the workouts for today, keep a weekly split visible when needed, and let you check off sets as you go.
