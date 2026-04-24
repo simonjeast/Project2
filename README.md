@@ -1,8 +1,8 @@
 ### https://simonjeast.github.io/Project2/
 
-# BOW Tracker
+# Gym Tracker
 
-BOW Tracker is a small front-end gym routine planner built around the idea in `PROPOSAL.md`: show the workouts for today, keep a weekly split visible when needed, and let you check off sets as you go.
+Gym Tracker is a small front-end gym routine planner built around the idea in `PROPOSAL.md`: show the workouts for today, keep a weekly split visible when needed, and let you check off sets as you go.
 
 The app is intentionally lightweight. It runs as a static site, stores your routine in `localStorage`, and gives you just enough structure to stay consistent without turning into a full fitness platform.
 
@@ -22,21 +22,6 @@ The app is intentionally lightweight. It runs as a static site, stores your rout
 - HTML for structure
 - CSS for layout, styling, and responsive behavior
 - Vanilla JavaScript for rendering, state management, drag-and-drop, and `localStorage`
-
-## Running It
-
-No build step is required.
-
-1. Clone or download the project.
-2. Open `index.html` directly in a browser.
-
-If you prefer serving it locally instead of opening the file directly, any static server will work. For example:
-
-```powershell
-python -m http.server 8000
-```
-
-Then visit `http://localhost:8000`.
 
 ## How It Works
 
